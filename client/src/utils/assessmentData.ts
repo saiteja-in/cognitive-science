@@ -323,7 +323,7 @@ export const assessmentSections: Section[] = [
       {
         id: "q15",
         type: "single-choice",
-        text: "What's the probability in the Monty Hall scenario?",
+        text: "A room has three identical doors. Behind one is a deadly trap, and behind the other is a treasure. A robot randomly picks one before you enter. However, after you choose a door, the robot opens the other door and shows it's empty. What is the probability that the remaining door contains the treasure?",
         options: ["1/2", "2/3", "1/3", "3/4"],
         marks: {
           "1/2": 0,
@@ -639,7 +639,7 @@ export const getSectionRecommendations = (
   percentage: number
 ): string[] => {
   // only skip recommendations on a perfect score
-  if (percentage === 60) return [];
+  if (percentage >= 60) return ["Well done!"];
   
   const map: { [key: string]: string[] } = {
     section1: [
