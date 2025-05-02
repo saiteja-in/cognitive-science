@@ -1,10 +1,16 @@
+// assessment.ts
+
+// 1. Updated Question interface to drop `correctAnswer` and add `marks` and optional `markingType`
 export interface Question {
   id: string;
-  type: "multiple-choice" | "single-choice" | "text";
+  type: "single-choice" | "multiple-choice" | "text";
   text: string;
   options?: string[];
-  correctAnswer: string | string[];
-  image?:string;
+  /** per‐option marks for choice questions */
+  marks?: { [option: string]: number };
+  image?: string;
+  /** for open‐ended text questions, triggers emotion‐based scoring */
+  markingType?: "emotionBased";
 }
 
 export interface Section {
@@ -14,9 +20,67 @@ export interface Section {
   questions: Question[];
 }
 
+// 2. Emotion categorizer ported from the Python snippet
+function categorizeResponse(response: string): Record<string, number> {
+  const categories: Record<string, number> = {
+    Positive: 0,
+    Negative: 0,
+    Happy: 0,
+    Sad: 0,
+    Emotional: 0,
+    Romantic: 0,
+    "Value-based": 0,
+  };
+
+  const positiveWords = ["success", "achieve", "dream", "hope", "determined", "overcome"];
+  const negativeWords = ["failure", "struggle", "hardship", "problem", "robbery"];
+  const happyWords = ["joy", "happiness", "celebrate", "reunion", "excited"];
+  const sadWords = ["death", "loss", "tragedy", "cry", "sorrow"];
+  const emotionalWords = ["tears", "heartfelt", "moving", "inspired", "pain"];
+  const romanticWords = ["love", "affection", "relationship", "marriage"];
+  const valueBasedWords = ["humility", "kindness", "hard work", "perseverance", "morals"];
+
+  response
+    .toLowerCase()
+    .split(/\W+/)
+    .forEach((word) => {
+      if (positiveWords.includes(word)) categories.Positive++;
+      if (negativeWords.includes(word)) categories.Negative++;
+      if (happyWords.includes(word)) categories.Happy++;
+      if (sadWords.includes(word)) categories.Sad++;
+      if (emotionalWords.includes(word)) categories.Emotional++;
+      if (romanticWords.includes(word)) categories.Romantic++;
+      if (valueBasedWords.includes(word)) categories["Value-based"]++;
+    });
+
+  const total = Object.values(categories).reduce((a, b) => a + b, 0);
+  if (total > 0) {
+    for (const key in categories) {
+      categories[key] = parseFloat(((categories[key] / total) * 100).toFixed(2));
+    }
+  }
+
+  return categories;
+}
+
+// 3. The new assessment data with per‐option marks
 export const assessmentSections: Section[] = [
-  // SECTION 1: STORY WRITING
- 
+  // SECTION 1: STORY WRITING (emotion‐based)
+  {
+    id: "section1",
+    title: "Story Writing",
+    description: "Creative writing based on visual prompts",
+    questions: [
+      {
+        id: "q1",
+        type: "text",
+        text: `Prepare a story based on the below images and keywords. Write the moral of the story in a few sentences and title the scenario.
+[Keywords: Ambition, doctor, financial problems, humility, professor, old woman, brother and three sisters, agriculture.]`,
+        image: "./image1.png",
+        markingType: "emotionBased",
+      },
+    ],
+  },
 
   // SECTION 2: GESTALT's SECTION
   {
@@ -30,23 +94,26 @@ export const assessmentSections: Section[] = [
         text: "When you see a traffic signal board, what do you feel like is happening?",
         options: [
           "The light is moving from one circle to another",
-          "Disappearing at one and appearing at the other?"
+          "Disappearing at one and appearing at the other?",
         ],
-        image:"./image2.png",
-        correctAnswer: "The light is moving from one circle to another"
+        image: "./image2.png",
+        marks: {
+          "The light is moving from one circle to another": 1,
+          "Disappearing at one and appearing at the other?": 0.5,
+        },
       },
       {
         id: "q3",
         type: "single-choice",
         text: "What do you think happens next from the image?",
-        options: [
-          "The tree gets hit by the lightning",
-          "It is going to rain heavily"
-        ],
-        image:"./image3.png",
-        correctAnswer: "The tree gets hit by the lightning"
-      }
-    ]
+        options: ["The tree gets hit by the lightning", "It is going to rain heavily"],
+        image: "./image3.png",
+        marks: {
+          "The tree gets hit by the lightning": 1,
+          "It is going to rain heavily": 0.5,
+        },
+      },
+    ],
   },
 
   // SECTION 3: META-COGNITIVE
@@ -58,40 +125,55 @@ export const assessmentSections: Section[] = [
       {
         id: "q4",
         type: "single-choice",
-        text: "You have been reading the textbook multiple times to understand a concept, but you still find it difficult to grasp. What would you do next? ",
+        text: "You have been reading the textbook multiple times to understand a concept, but you still find it difficult to grasp. What would you do next?",
         options: [
           "Switch to a different topic skipping the concept",
           "Keep reading the textbook and trying to understand",
           "Try a different method, such as watching explanatory videos or discussing with peers",
-          "Memorize the definitions without understanding the concept for the exam."
+          "Memorize the definitions without understanding the concept for the exam.",
         ],
-        correctAnswer: "Try a different method, such as watching explanatory videos or discussing with peers"
+        marks: {
+          "Switch to a different topic skipping the concept": 0.25,
+          "Keep reading the textbook and trying to understand": 0.75,
+          "Try a different method, such as watching explanatory videos or discussing with peers": 1,
+          "Memorize the definitions without understanding the concept for the exam.": 0.5,
+        },
       },
       {
         id: "q5",
         type: "single-choice",
-        text: "During an exam, if you realize that you are spending too much time on one question. What would you do ?",
+        text: "During an exam, if you realize that you are spending too much time on one question. What would you do?",
         options: [
           "Skip the question and come back later if time allows",
           "Continue working on it until you solve it",
           "Guess the answer and move on without reviewing",
-          "Leave the question unanswered and focus on easy ones"
+          "Leave the question unanswered and focus on easy ones",
         ],
-        correctAnswer: "Skip the question and come back later if time allows"
+        marks: {
+          "Skip the question and come back later if time allows": 1,
+          "Continue working on it until you solve it": 0.5,
+          "Guess the answer and move on without reviewing": 0.5,
+          "Leave the question unanswered and focus on easy ones": 0.25,
+        },
       },
       {
         id: "q6",
         type: "single-choice",
-        text: "After reading a detailed research article, you realizes that you remember specific facts but struggle to explain the overall concept. What would you do to improve your understanding ?",
+        text: "After reading a detailed research article, you realize that you remember specific facts but struggle to explain the overall concept. What would you do to improve your understanding?",
         options: [
           "Re-read the article while summarizing key points and main ideas.",
           "Ignore comprehension gaps and move to a new topic.",
           "Memorize a few sentences though you don't clearly understand them.",
-          "Assume you understand it and avoid reviewing."
+          "Assume you understand it and avoid reviewing.",
         ],
-        correctAnswer: "Re-read the article while summarizing key points and main ideas."
-      }
-    ]
+        marks: {
+          "Re-read the article while summarizing key points and main ideas.": 1,
+          "Ignore comprehension gaps and move to a new topic.": 0.25,
+          "Memorize a few sentences though you don't clearly understand them.": 0.5,
+          "Assume you understand it and avoid reviewing.": 0.25,
+        },
+      },
+    ],
   },
 
   // SECTION 4: PROCEDURAL
@@ -109,9 +191,15 @@ export const assessmentSections: Section[] = [
           "I would try but might assemble it incorrectly.",
           "I would assemble it but might need help with some parts.",
           "I would assemble it correctly with minimal issues.",
-          "I would assemble it quickly and efficiently without referring to the manual often."
+          "I would assemble it quickly and efficiently without referring to the manual often.",
         ],
-        correctAnswer: "I would assemble it quickly and efficiently without referring to the manual often."
+        marks: {
+          "I would struggle to understand the instructions and might not finish.": 0.25,
+          "I would try but might assemble it incorrectly.": 0.5,
+          "I would assemble it but might need help with some parts.": 0.75,
+          "I would assemble it correctly with minimal issues.": 0.75,
+          "I would assemble it quickly and efficiently without referring to the manual often.": 1,
+        },
       },
       {
         id: "q8",
@@ -122,11 +210,17 @@ export const assessmentSections: Section[] = [
           "Struggle but manage to say a few sentences.",
           "Speak with some confidence but with minor mistakes.",
           "Deliver a structured speech with good flow.",
-          "Speak confidently with a well-organized message and engage the audience."
+          "Speak confidently with a well-organized message and engage the audience.",
         ],
-        correctAnswer: "Speak confidently with a well-organized message and engage the audience."
-      }
-    ]
+        marks: {
+          "Get nervous and fail to express yourself clearly.": 0.25,
+          "Struggle but manage to say a few sentences.": 0.5,
+          "Speak with some confidence but with minor mistakes.": 0.75,
+          "Deliver a structured speech with good flow.": 0.75,
+          "Speak confidently with a well-organized message and engage the audience.": 1,
+        },
+      },
+    ],
   },
 
   // SECTION 5: DECLARATIVE
@@ -143,9 +237,14 @@ export const assessmentSections: Section[] = [
           "It can affect emotions.",
           "It sometimes causes anxiety and self-esteem issues.",
           "It affects mental health by influencing self-image, stress, and social behavior.",
-          "Excessive social media use impacts mental health by increasing anxiety, depression, and altering self-perception through unrealistic comparisons."
+          "Excessive social media use impacts mental health by increasing anxiety, depression, and altering self-perception through unrealistic comparisons.",
         ],
-        correctAnswer: "Excessive social media use impacts mental health by increasing anxiety, depression, and altering self-perception through unrealistic comparisons."
+        marks: {
+          "It can affect emotions.": 0.25,
+          "It sometimes causes anxiety and self-esteem issues.": 0.5,
+          "It affects mental health by influencing self-image, stress, and social behavior.": 0.75,
+          "Excessive social media use impacts mental health by increasing anxiety, depression, and altering self-perception through unrealistic comparisons.": 1,
+        },
       },
       {
         id: "q10",
@@ -156,9 +255,15 @@ export const assessmentSections: Section[] = [
           "It helps in completing tasks",
           "It allows better control over studies and deadlines.",
           "It improves productivity, efficiency, and reduces stress.",
-          "Time management enhances academic performance, prevents burnout, and ensures balanced personal and professional growth."
+          "Time management enhances academic performance, prevents burnout, and ensures balanced personal and professional growth.",
         ],
-        correctAnswer: "Time management enhances academic performance, prevents burnout, and ensures balanced personal and professional growth."
+        marks: {
+          "The concept of time management is unclear to me": 0.1,
+          "It helps in completing tasks": 0.25,
+          "It allows better control over studies and deadlines.": 0.5,
+          "It improves productivity, efficiency, and reduces stress.": 0.75,
+          "Time management enhances academic performance, prevents burnout, and ensures balanced personal and professional growth.": 1,
+        },
       },
       {
         id: "q11",
@@ -168,14 +273,19 @@ export const assessmentSections: Section[] = [
           "Understanding key definitions, principles, and terminology in renewable energy.",
           "Guessing the meaning of technical terms based on intuition.",
           "Skipping the definitions and focusing only on practical applications.",
-          "Memorizing the names of scientists in the field without understanding their contributions."
+          "Memorizing the names of scientists in the field without understanding their contributions.",
         ],
-        correctAnswer: "Understanding key definitions, principles, and terminology in renewable energy."
-      }
-    ]
+        marks: {
+          "Understanding key definitions, principles, and terminology in renewable energy.": 1,
+          "Guessing the meaning of technical terms based on intuition.": 0.75,
+          "Skipping the definitions and focusing only on practical applications.": 0.5,
+          "Memorizing the names of scientists in the field without understanding their contributions.": 0.25,
+        },
+      },
+    ],
   },
 
-  // SECTION 6: IQ-BASED
+  // SECTION 6: IQ-BASED QUESTIONS
   {
     id: "section6",
     title: "IQ-Based Questions",
@@ -185,52 +295,56 @@ export const assessmentSections: Section[] = [
         id: "q13",
         type: "single-choice",
         text: "What's next in sequence: 1, 3, 7, 15, 31, 63, ?",
-        options: [
-          "95",
-          "127",
-          "125",
-          "121"
-        ],
-        correctAnswer: "127"
+        options: ["95", "127", "125", "121"],
+        marks: {
+          "95": 0,
+          "127": 1,
+          "125": 0,
+          "121": 0,
+        },
       },
       {
         id: "q14",
         type: "single-choice",
-        text: "A scientist invents a time machine. She travels 30 years into the past and accidentally prevents her parents from ever meeting. If this happened, which of the following must logically be true?",
+        text: "A scientist invents a time machine ... which must logically be true?",
         options: [
           "The scientist will still exist but in a parallel timeline.",
           "The scientist cannot exist, yet she does.",
           "The time machine will no longer function.",
-          "The event is impossible and contradicts itself."
+          "The event is impossible and contradicts itself.",
         ],
-        correctAnswer: "The event is impossible and contradicts itself."
+        marks: {
+          "The event is impossible and contradicts itself.": 1,
+          "The scientist will still exist but in a parallel timeline.": 0,
+          "The scientist cannot exist, yet she does.": 0,
+          "The time machine will no longer function.": 0,
+        },
       },
       {
         id: "q15",
         type: "single-choice",
-        text: "A room has three identical doors. Behind one is a deadly trap, and behind the other is a treasure. A robot randomly picks one before you enter. However, after you choose a door, the robot opens the other door and shows its empty. What is the probability that the remaining door contains the treasure?",
-        options: [
-          "1/2",
-          "2/3",
-          "1/3",
-          "3/4"
-        ],
-        correctAnswer: "2/3"
+        text: "What's the probability in the Monty Hall scenario?",
+        options: ["1/2", "2/3", "1/3", "3/4"],
+        marks: {
+          "1/2": 0,
+          "2/3": 1,
+          "1/3": 0,
+          "3/4": 0,
+        },
       },
-      
       {
         id: "q17",
         type: "single-choice",
         text: "Word pattern: MELT → MEET → MENT → MINT → ?",
-        options: [
-          "MIND",
-          "MONT",
-          "MOST",
-          "MINX"
-        ],
-        correctAnswer: "MIND"
-      }
-    ]
+        options: ["MIND", "MONT", "MOST", "MINX"],
+        marks: {
+          MIND: 1,
+          MONT: 0,
+          MOST: 0,
+          MINX: 0,
+        },
+      },
+    ],
   },
 
   // SECTION 7: IMPLICIT KNOWLEDGE
@@ -242,87 +356,99 @@ export const assessmentSections: Section[] = [
       {
         id: "q18",
         type: "single-choice",
-        text: "You are playing a new strategy game for the first time. After a few rounds, you start making better moves without consciously analyzing each step. What does this suggest?",
+        text: "You are playing a new strategy game ... What does this suggest?",
         options: [
-          "You have developed an intuitive understanding of the games patterns.",
+          "You have developed an intuitive understanding of the game's patterns.",
           "You are following a strict rulebook without deviation.",
           "Your decisions are random and unrelated to past experiences",
-          "You must explicitly study every rule before making any moves"
+          "You must explicitly study every rule before making any moves",
         ],
-        correctAnswer: "You have developed an intuitive understanding of the games patterns."
+        marks: {
+          "You have developed an intuitive understanding of the game's patterns.": 1,
+          "You are following a strict rulebook without deviation.": 0.5,
+          "Your decisions are random and unrelated to past experiences": 0.25,
+          "You must explicitly study every rule before making any moves": 0.25,
+        },
       },
       {
         id: "q19",
         type: "single-choice",
-        text: "An experienced firefighter enters a burning building and instantly senses that the floor is unstable, signaling everyone to evacuate. What is the most likely reason for this quick decision?",
+        text: "An experienced firefighter enters a burning building ... Why?",
         options: [
           "Unconscious pattern recognition from past experiences in similar situations.",
           "Following a step-by-step evacuation guide at that moment.",
           "Guessing randomly without any reasoning.",
-          "Asking for instructions before making any decision."
+          "Asking for instructions before making any decision.",
         ],
-        correctAnswer: "Unconscious pattern recognition from past experiences in similar situations."
-      }
-    ]
+        marks: {
+          "Unconscious pattern recognition from past experiences in similar situations.": 1,
+          "Following a step-by-step evacuation guide at that moment.": 0.5,
+          "Guessing randomly without any reasoning.": 0.25,
+          "Asking for instructions before making any decision.": 0.25,
+        },
+      },
+    ],
   },
 
-  // SECTION 8: EMOTIONAL QUESTIONS
+  // SECTION 8: EMOTIONAL INTELLIGENCE
   {
-    "id": "section8",
-    "title": "Emotional Intelligence",
-    "description": "Social and emotional reasoning",
-    "questions": [
-      
+    id: "section8",
+    title: "Emotional Intelligence",
+    description: "Social and emotional reasoning",
+    questions: [
       {
-        "id": "q21",
-        "type": "single-choice",
-        "text": "What kind of person do you want to be, someone who is kind and puts their loved ones before themselves, or a person who is authentic and sticks to his/her principles either good or bad?",
-        "options": [
-          "Kind to loved ones",
-          "Authentic with principles"
-        ],
-        "correctAnswer": "Authentic with principles"
+        id: "q21",
+        type: "single-choice",
+        text: "What kind of person do you want to be?",
+        options: ["Kind to loved ones", "Authentic with principles"],
+        marks: {
+          "Kind to loved ones": 0.5,
+          "Authentic with principles": 1,
+        },
       },
       {
-        "id": "q22",
-        "type": "single-choice",
-        "text": "Would you rather take the blame for a fault you're innocent of or would you let your best friend take the blame for a fault that you're guilty of?",
-        "options": [
-          "Take blame",
-          "Let friend take blame"
-        ],
-        "correctAnswer": "Take blame"
+        id: "q22",
+        type: "single-choice",
+        text: "Would you rather take the blame ... ?",
+        options: ["Take blame", "Let friend take blame"],
+        marks: {
+          "Take blame": 1,
+          "Let friend take blame": 0.25,
+        },
       },
       {
-        "id": "q23",
-        "type": "single-choice",
-        "text": "Do you often double-check things and worry if you did not check again whether you locked your car or closed the gas knob?",
-        "options": [
-          "Yes",
-          "No"
-        ],
-        "correctAnswer": "Yes"
+        id: "q23",
+        type: "single-choice",
+        text: "Do you often double-check things ... ?",
+        options: ["Yes", "No"],
+        marks: {
+          Yes: 1,
+          No: 0.5,
+        },
       },
       {
-        "id": "q24",
-        "type": "single-choice",
-        "text": "You and your best friend have been inseparable for years. However, recently, you overheard them saying something negative about you to another friend. You feel deeply hurt and betrayed, but they seem unaware that you know about it. The situation has been bothering you, and your interactions have become awkward. What would you do in this scenario?",
-        "options": [
+        id: "q24",
+        type: "single-choice",
+        text: "You overhear your best friend saying something negative ... What do you do?",
+        options: [
           "Ignore the situation completely and hope the problem resolves on its own",
-          "Cut off all communication with your friend , assuming they intentionally betrayed you",
-          "Ask mutual friends about what happened instaed of confronting your friend directly",
+          "Cut off all communication with your friend, assuming they intentionally betrayed you",
+          "Ask mutual friends about what happened instead of confronting your friend directly",
           "Calmly talk to your friend and express your feelings, seeking clarification",
-          "Listen to their perspective first,then share your feelings and find a resolution together"
+          "Listen to their perspective first, then share your feelings and find a resolution together",
         ],
-        "correctAnswer": "Listen to their perspective first,then share your feelings and find a resolution together"
-      }
-    
-    ]
+        marks: {
+          "Ignore the situation completely and hope the problem resolves on its own": 1,
+          "Cut off all communication with your friend, assuming they intentionally betrayed you": 0.75,
+          "Ask mutual friends about what happened instead of confronting your friend directly": 0.5,
+          "Calmly talk to your friend and express your feelings, seeking clarification": 0.25,
+          "Listen to their perspective first, then share your feelings and find a resolution together": 0.25,
+        },
+      },
+    ],
   },
-  
 
-
-  // SECTION 9: CREATIVE QUESTIONS
+  // SECTION 9: CREATIVE THINKING
   {
     id: "section9",
     title: "Creative Thinking",
@@ -331,16 +457,21 @@ export const assessmentSections: Section[] = [
       {
         id: "q26",
         type: "single-choice",
-        text: "You are cooking a recipe, but you realize you are missing a key ingredient. What would you do?",
+        text: "You are cooking a recipe but missing a key ingredient. What do you do?",
         options: [
           "Find a substitute ingredient that serves the same function.",
           "Throw away the dish and start over.",
           "Refuse to continue cooking and order food instead.",
-          "Ignore the missing ingredient and risk ruining the dish."
+          "Ignore the missing ingredient and risk ruining the dish.",
         ],
-        correctAnswer: "Find a substitute ingredient that serves the same function."
-      }
-    ]
+        marks: {
+          "Find a substitute ingredient that serves the same function.": 1,
+          "Throw away the dish and start over.": 0.5,
+          "Refuse to continue cooking and order food instead.": 0.25,
+          "Ignore the missing ingredient and risk ruining the dish.": 0.75,
+        },
+      },
+    ],
   },
 
   // SECTION 10: SOCIAL KNOWLEDGE
@@ -352,40 +483,55 @@ export const assessmentSections: Section[] = [
       {
         id: "q27",
         type: "single-choice",
-        text: "During a group project, two members strongly disagree on how to complete a task. What is the best way to resolve this?",
+        text: "During a group project, two members strongly disagree. What is best?",
         options: [
           "Encourage discussion to find a compromise that benefits the project.",
           "Ignore the conflict and continue working separately.",
           "Let one person make the decision without input from others.",
-          "Avoid discussing the issue and hope it resolves itself."
+          "Avoid discussing the issue and hope it resolves itself.",
         ],
-        correctAnswer: "Encourage discussion to find a compromise that benefits the project."
+        marks: {
+          "Encourage discussion to find a compromise that benefits the project.": 1,
+          "Ignore the conflict and continue working separately.": 0.5,
+          "Let one person make the decision without input from others.": 0.5,
+          "Avoid discussing the issue and hope it resolves itself.": 0.25,
+        },
       },
       {
         id: "q28",
         type: "single-choice",
-        text: "Your team is assigned a complex task with multiple steps. What is the best way to improve efficiency?",
+        text: "Your team is assigned a complex task. Best way to improve efficiency?",
         options: [
-          "Divide tasks based on each member's strengths and skills.",
+          "Divide tasks based on each member’s strengths and skills.",
           "Let one person do all the work while others watch.",
           "Have everyone work on the same part of the task at the same time.",
-          "Ignore task planning and complete the work randomly."
+          "Ignore task planning and complete the work randomly.",
         ],
-        correctAnswer: "Divide tasks based on each member's strengths and skills."
+        marks: {
+          "Divide tasks based on each member’s strengths and skills.": 1,
+          "Let one person do all the work while others watch.": 0.25,
+          "Have everyone work on the same part of the task at the same time.": 0.5,
+          "Ignore task planning and complete the work randomly.": 0.25,
+        },
       },
       {
         id: "q29",
         type: "single-choice",
-        text: "During a group assignment, a key member suddenly becomes unavailable. What is the best approach?",
+        text: "A key member becomes unavailable. Best approach?",
         options: [
           "Reassign their responsibilities among the remaining team members.",
           "Pause the entire project until they return.",
           "Leave their tasks unfinished and ignore the missing work.",
-          "Continue working without adjusting the plan."
+          "Continue working without adjusting the plan.",
         ],
-        correctAnswer: "Reassign their responsibilities among the remaining team members."
-      }
-    ]
+        marks: {
+          "Reassign their responsibilities among the remaining team members.": 1,
+          "Pause the entire project until they return.": 0.25,
+          "Leave their tasks unfinished and ignore the missing work.": 0.25,
+          "Continue working without adjusting the plan.": 0.5,
+        },
+      },
+    ],
   },
 
   // SECTION 11: CONDITIONAL & ADAPTIVE
@@ -397,181 +543,96 @@ export const assessmentSections: Section[] = [
       {
         id: "q30",
         type: "single-choice",
-        text: "You are working on a team project when a sudden technical issue delays progress. What is the best approach?",
+        text: "A technical issue delays your team project. Best approach?",
         options: [
           "Quickly identify an alternative method or tool to complete the task.",
           "Wait for someone else to fix the issue instead of adjusting.",
-          "Continue using the same method, even if its not working.",
-          "Abandon the project and start a completely unrelated task."
+          "Continue using the same method, even if it's not working.",
+          "Abandon the project and start a completely unrelated task.",
         ],
-        correctAnswer: "Quickly identify an alternative method or tool to complete the task."
+        marks: {
+          "Quickly identify an alternative method or tool to complete the task.": 1,
+          "Wait for someone else to fix the issue instead of adjusting.": 0.25,
+          "Continue using the same method, even if it's not working.": 0.5,
+          "Abandon the project and start a completely unrelated task.": 0.25,
+        },
       },
       {
         id: "q31",
         type: "single-choice",
-        text: "You have prepared a presentation with slides, but just before the meeting, the projector stops working. What is the best response?",
+        text: "The projector stops working just before your presentation. Best response?",
         options: [
           "Adjust by explaining key points verbally without relying on slides.",
           "Cancel the presentation and reschedule for another day.",
           "Panic and refuse to present without slides.",
-          "Show the slides on your laptop, but do not explain them."
+          "Show the slides on your laptop, but do not explain them.",
         ],
-        correctAnswer: "Adjust by explaining key points verbally without relying on slides."
-      }
-    ]
-  },
-  {
-    id: "section1",
-    title: "Story Writing",
-    description: "Creative writing based on visual prompts",
-    questions: [
-      {
-        id: "q1",
-        image:"./image1.png",
-        type: "text",
-        text: "Prepare a story based on the below images, and keywords. Write the moral of the story in a few sentences and title the scenario? [Keywords: Ambition, doctor, financial problems, humility, professor, Old woman, Brother and three sisters, Agriculture.]",
-        correctAnswer: "story writing"
-      }
-    ]
+        marks: {
+          "Adjust by explaining key points verbally without relying on slides.": 1,
+          "Cancel the presentation and reschedule for another day.": 0.25,
+          "Panic and refuse to present without slides.": 0.25,
+          "Show the slides on your laptop, but do not explain them.": 0.5,
+        },
+      },
+    ],
   },
 ];
 
-// Calculate score based on answers
-// export const calculateScore = (answers: { [key: string]: string | string[] }) => {
-//   let score = 0;
-//   let totalQuestions = 0;
-
-//   // Flatten all questions
-//   const allQuestions = assessmentSections.flatMap(section => section.questions);
-//   totalQuestions = allQuestions.length;
-
-//   // Compare answers with correct ones
-//   allQuestions.forEach(question => {
-//     const userAnswer = answers[question.id];
-    
-//     if (userAnswer) {
-//       if (Array.isArray(question.correctAnswer) && Array.isArray(userAnswer)) {
-//         // For multiple choice, check if arrays have the same elements
-//         const correctSet = new Set(question.correctAnswer);
-//         const userSet = new Set(userAnswer);
-        
-//         if (correctSet.size === userSet.size && 
-//             [...correctSet].every(value => userSet.has(value))) {
-//           score++;
-//         }
-//       } else if (!Array.isArray(question.correctAnswer) && !Array.isArray(userAnswer)) {
-//         // For text or single choice
-//         if (question.type === "text") {
-//           // For text answers, check if the answer contains keywords
-//           if (userAnswer.toLowerCase().includes(question.correctAnswer.toLowerCase())) {
-//             score++;
-//           }
-//         } else if (userAnswer === question.correctAnswer) {
-//           score++;
-//         }
-//       }
-//     }
-//   });
-
-//   const percentage = Math.round((score / totalQuestions) * 100);
-  
-//   return { score, totalQuestions, percentage };
-// };
-
-// // Get recommendations based on score percentage
-// export const getRecommendations = (percentage: number) => {
-//   if (percentage >= 80) {
-//     return {
-//       message: "Excellent work! You have a strong understanding of the subject.",
-//       suggestions: [
-//         "Consider exploring more advanced topics",
-//         "Try building complex projects to deepen your knowledge",
-//         "Share your knowledge by teaching others"
-//       ]
-//     };
-//   } else if (percentage >= 60) {
-//     return {
-//       message: "Good job! You have a solid grasp of most concepts.",
-//       suggestions: [
-//         "Review the areas where you made mistakes",
-//         "Practice with hands-on projects to strengthen your understanding",
-//         "Join communities to discuss and learn from others"
-//       ]
-//     };
-//   } else if (percentage >= 40) {
-//     return {
-//       message: "You're on the right track, but there's room for improvement.",
-//       suggestions: [
-//         "Focus on strengthening fundamentals",
-//         "Take your time with practical exercises",
-//         "Consider revisiting learning materials"
-//       ]
-//     };
-//   } else {
-//     return {
-//       message: "You should revisit the fundamentals of this subject.",
-//       suggestions: [
-//         "Start with basic concepts and build up gradually",
-//         "Use interactive tutorials for better understanding",
-//         "Practice regularly with simple projects",
-//         "Consider finding a mentor for guidance"
-//       ]
-//     };
-//   }
-// };
-
-// import { assessmentSections } from './assessmentSections';
-
-export const calculateDetailedScores = (answers: { [key: string]: string | string[] }) => {
-  const sectionResults = assessmentSections.map(section => {
+// 4. New scoring function
+export const calculateDetailedScores = (
+  answers: Record<string, string | string[]>
+) => {
+  const sectionResults = assessmentSections.map((section) => {
     let sectionScore = 0;
-    const questions = section.questions;
+    let sectionMax = 0;
 
-    questions.forEach(question => {
-      const userAnswer = answers[question.id];
-
-      if (userAnswer) {
-        if (Array.isArray(question.correctAnswer) && Array.isArray(userAnswer)) {
-          const correctSet = new Set(question.correctAnswer);
-          const userSet = new Set(userAnswer);
-          if (
-            correctSet.size === userSet.size &&
-            [...correctSet].every(value => userSet.has(value))
-          ) {
-            sectionScore++;
-          }
-        } else if (!Array.isArray(question.correctAnswer) && !Array.isArray(userAnswer)) {
-          if (question.type === "text") {
-            if ((userAnswer as string).toLowerCase().includes((question.correctAnswer as string).toLowerCase())) {
-              sectionScore++;
-            }
-          } else if (userAnswer === question.correctAnswer) {
-            sectionScore++;
-          }
+    section.questions.forEach((q) => {
+      // For choice questions, max = highest marks in mapping
+      if (q.marks) {
+        const maxMark = Math.max(...Object.values(q.marks));
+        sectionMax += maxMark;
+        const ans = answers[q.id];
+        if (typeof ans === "string") {
+          sectionScore += q.marks[ans] ?? 0;
         }
+      }
+      // For text (emotionBased), we simply normalize to 1 mark
+      else if (q.type === "text" && q.markingType === "emotionBased") {
+        sectionMax += 1;
+        // (you could choose to award a partial score here;
+        //  for now we just run the categorizer)
+        const resp = typeof answers[q.id] === "string" ? (answers[q.id] as string) : "";
+        const emotions = categorizeResponse(resp);
+        // attach to results if you want per‐question detail...
+        // but award 0 for now (or 1 for any response)
       }
     });
 
+    const pct = sectionMax > 0 ? Math.round((sectionScore / sectionMax) * 100) : 0;
     return {
       sectionId: section.id,
       sectionTitle: section.title,
-      total: questions.length,
+      total: sectionMax,
       score: sectionScore,
-      percentage: Math.round((sectionScore / questions.length) * 100)
+      percentage: pct,
     };
   });
 
-  const totalScore = sectionResults.reduce((acc, val) => acc + val.score, 0);
-  const totalQuestions = sectionResults.reduce((acc, val) => acc + val.total, 0);
-  const percentage = Math.round((totalScore / totalQuestions) * 100);
+  const totalScore = sectionResults.reduce((sum, s) => sum + s.score, 0);
+  const totalMax = sectionResults.reduce((sum, s) => sum + s.total, 0);
+  const overallPct = totalMax > 0 ? Math.round((totalScore / totalMax) * 100) : 0;
 
   return {
     score: totalScore,
-    totalQuestions,
-    percentage,
-    sectionResults
+    totalQuestions: totalMax,
+    percentage: overallPct,
+    sectionResults,
   };
 };
+
+
+
+
 
 export const getSectionRecommendations = (
   sectionId: string,
