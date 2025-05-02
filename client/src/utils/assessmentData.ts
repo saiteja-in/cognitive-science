@@ -306,7 +306,7 @@ export const assessmentSections: Section[] = [
       {
         id: "q14",
         type: "single-choice",
-        text: "A scientist invents a time machine ... which must logically be true?",
+        text: "A scientist invents a time machine. She travels 30 years into the past and accidentally prevents her parents from ever meeting. If this happened, which of the following must logically be true?",
         options: [
           "The scientist will still exist but in a parallel timeline.",
           "The scientist cannot exist, yet she does.",
@@ -356,7 +356,7 @@ export const assessmentSections: Section[] = [
       {
         id: "q18",
         type: "single-choice",
-        text: "You are playing a new strategy game ... What does this suggest?",
+        text: "You are playing a new strategy game for the first time. After a few rounds, you start making better moves without consciously analyzing each step. What does this suggest?",
         options: [
           "You have developed an intuitive understanding of the game's patterns.",
           "You are following a strict rulebook without deviation.",
@@ -373,7 +373,7 @@ export const assessmentSections: Section[] = [
       {
         id: "q19",
         type: "single-choice",
-        text: "An experienced firefighter enters a burning building ... Why?",
+        text: "An experienced firefighter enters a burning building and instantly senses that the floor is unstable, signaling everyone to evacuate. What is the most likely reason for this quick decision?",
         options: [
           "Unconscious pattern recognition from past experiences in similar situations.",
           "Following a step-by-step evacuation guide at that moment.",
@@ -409,7 +409,7 @@ export const assessmentSections: Section[] = [
       {
         id: "q22",
         type: "single-choice",
-        text: "Would you rather take the blame ... ?",
+        text: "Would you rather take the blame for a fault you're innocent of or would you let your best friend take the blame for a fault that you're guilty of?",
         options: ["Take blame", "Let friend take blame"],
         marks: {
           "Take blame": 1,
@@ -419,7 +419,7 @@ export const assessmentSections: Section[] = [
       {
         id: "q23",
         type: "single-choice",
-        text: "Do you often double-check things ... ?",
+        text: "Do you often double-check things and worry if you did not check again whether you locked your car or closed the gas knob?",
         options: ["Yes", "No"],
         marks: {
           Yes: 1,
@@ -429,7 +429,7 @@ export const assessmentSections: Section[] = [
       {
         id: "q24",
         type: "single-choice",
-        text: "You overhear your best friend saying something negative ... What do you do?",
+        text: "You and your best friend have been inseparable for years. However, recently, you overheard them saying something negative about you to another friend. You feel deeply hurt and betrayed, but they seem unaware that you know about it. The situation has been bothering you, and your interactions have become awkward. What would you do in this scenario?",
         options: [
           "Ignore the situation completely and hope the problem resolves on its own",
           "Cut off all communication with your friend, assuming they intentionally betrayed you",

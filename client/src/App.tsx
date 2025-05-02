@@ -10,7 +10,7 @@ import History from "./pages/History";
 import Register from "./pages/Register";
 import Signin from "./pages/Signin";
 import Home from "./pages/Home";
-import Navbar from "./components/Navbar";
+import Navbar from "./components/NavBar";
 
 const queryClient = new QueryClient();
 

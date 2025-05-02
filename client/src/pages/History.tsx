@@ -133,12 +133,22 @@ const History = () => {
                                       Get Recommendations
                                     </Button>
                                     
-                                    {recommendations[section.sectionId] && (
-                                      <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-md">
-                                        <h4 className="font-semibold mb-2">Recommendations:</h4>
-                                        <p>{recommendations[section.sectionId]}</p>
-                                      </div>
-                                    )}
+                                    {recommendations[section.sectionId]?.length > 0 && (
+  <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-md">
+    <h4 className="font-semibold mb-2">Recommendations:</h4>
+    <ul className="list-disc list-inside space-y-2">
+      {recommendations[section.sectionId].map((rec, idx) => (
+        <li
+          key={idx}
+          className="ml-4"
+          // if your rec strings contain HTML links, this will render them correctly
+          dangerouslySetInnerHTML={{ __html: rec }}
+        />
+      ))}
+    </ul>
+  </div>
+)}
+
                                     
                                     <div className="space-y-6">
                                       {section.questions.map((question, qIndex) => (
